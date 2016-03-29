@@ -1,0 +1,977 @@
+package com.yun.appback.method;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.apache.commons.lang.StringUtils;
+import org.restlet.data.Form;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.yun.appback.bo.AppBO;
+import com.yun.appback.bo.AppExamBO;
+import com.yun.appback.bo.AppJobBO;
+import com.yun.appback.bo.AppMemberBO;
+import com.yun.appback.bo.AppRemindGetBO;
+import com.yun.appback.bo.AppRemindUpdateBO;
+import com.yun.appback.bo.AppSynchBO;
+import com.yun.appback.bo.AppTestBO;
+import com.yun.appback.bo.AppWeatherBO;
+import com.yun.appback.modules.annotation.NotNull;
+import com.yun.appback.modules.annotation.Version;
+import com.yun.appback.modules.base.IdentCodeSession;
+import com.yun.modules.exception.BusinessException;
+import com.yun.util.ValidateUtils;
+
+/**
+ * @description：json具体的方法
+ * @author： jiujiya
+ * @update： 2014-7
+ * @version： 1.0
+ */
+@Version(name="app", code = 10)
+public class YunMethod extends BaseMethod {
+
+	/** 日志对象 */
+	protected Logger logger = LoggerFactory.getLogger(YunMethod.class);
+
+	/**
+	 * 获得个推的clientID
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid", "clientId", "mobile_type" })
+	public Map<String, Object> clientId(Form form) {
+		String uid = getFirstValue(form, "uid");
+		String clientId = getFirstValue(form, "clientId");
+		String mobile_type = getFirstValue(form, "mobile_type");
+		new AppBO().clientID(uid, clientId, mobile_type,null);//TODO IMEI没传，暂时设为null
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("ret", 0);
+		return map;
+	}
+	
+	/**
+	 * 获得消息数和用户数量
+	 * @return
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> getUserCountInfo(Form form) {
+		String uid = getFirstValue(form, "uid");
+		return new AppBO().getUserCountInfo(uid);
+	}
+
+	/**
+	 * 今天接口
+	 * 
+	 * @param form
+	 * @return
+	 */
+	public Map<String, Object> today(Form form) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		String constellation = getFirstValue(form, "constellation");
+		// String uid = getFirstValue(form, "uid");
+		String date = getFirstValue(form, "date");
+		if (StringUtils.isBlank(date)) {
+			date = sdf.format(new java.util.Date());
+		}
+
+		AppBO bo = new AppBO();
+
+		// 获得今日运势
+		Map<String, Object> fortune = null;
+		if (StringUtils.isNotBlank(constellation)) {
+			fortune = bo.getTodayConstellation(date, constellation);
+		}
+
+		// 获得历史上的今天的数据
+		String monthDate = date.substring(5, date.length());
+		List<Map<String, Object>> historys = bo.getToday(monthDate);
+
+		// 获得今日明星生日
+		List<Map<String, Object>> starBirthdays = bo
+				.getStarBirthdayByDate(monthDate);
+		// 获得今日首映电影
+		List<Map<String, Object>> movies = bo.getTodayMovie(date);
+
+		map.put("fortune", fortune);
+		map.put("historys", historys);
+		map.put("movies", movies);
+		map.put("starBirthdays", starBirthdays);
+
+		// 获得上一天，下一天
+		try {
+			Date d = sdf.parse(date);
+			Calendar c = Calendar.getInstance();
+			c.setTime(d);
+			c.add(Calendar.DAY_OF_MONTH, 1);
+			String nextDate = sdf.format(c.getTime());
+			c.add(Calendar.DAY_OF_MONTH, -2);
+			String lastDate = sdf.format(c.getTime());
+			map.put("nextDate", nextDate);
+			map.put("lastDate", lastDate);
+		} catch (ParseException e) {
+			logger.error(e.getMessage(), e);
+		}
+
+		return map;
+	}
+
+	/**
+	 * APP更新接口
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "mobile_type" })
+	public Map<String, Object> update(Form form) {
+		String mobile_type = getFirstValue(form, "mobile_type");
+		logger.info("调用检查更新方法：" + mobile_type);
+		return new AppBO().getVersion(mobile_type);
+	}
+
+	/**
+	 * 获得考试类型接口
+	 * 
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "cityId", "uid" })
+	public Map<String, Object> examType(Form form) {
+
+		String cityId = getFirstValue(form, "cityId");
+		String pkMember = getFirstValue(form, "uid");
+		return new AppExamBO().getExamTypes(cityId, pkMember);
+	}
+
+	/**
+	 * 天气接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "city_name"  })
+	public List<Map<String, Object>> weather(Form form) throws IOException {
+		String cityName = getFirstValue(form, "city_name");
+		return new AppWeatherBO().getWeather(cityName);
+	}
+
+	/**
+	 * 登陆接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "account", "password", "mobile_type", "imei", "clientId" })
+	public Map<String, Object> login(Form form) throws IOException {
+		String account = getFirstValue(form, "account");
+		String password = getFirstValue(form, "password");
+		String mobile_type = getFirstValue(form, "mobile_type");
+		String imei = getFirstValue(form, "imei");
+		String clientId = getFirstValue(form, "clientId");
+		if (!ValidateUtils.isEmail(account) && !ValidateUtils.isMobile(account)) {
+			return errorRet("手机号/邮箱不存在");
+		}
+		return new AppMemberBO().login(account, password, mobile_type, imei,
+				clientId);
+	}
+
+	/**
+	 * 验证码接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "use_type", "account" })
+	public Map<String, Object> identCode(Form form) throws IOException {
+		String use_type = getFirstValue(form, "use_type");
+		String account = getFirstValue(form, "account");
+		String oldAccount = getFirstValue(form, "oldAccount");
+		String uid = getFirstValue(form, "uid");
+
+		return new AppMemberBO().sendIdentCode(use_type, account, oldAccount,
+				uid);
+	}
+
+	/**
+	 * 注册接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "account", "password", "identCode", "city",
+			"birthday_type", "birthday", "imei", "clientId", "mobile_type" })
+	public Map<String, Object> register(Form form) throws IOException {
+		String password = getFirstValue(form, "password");
+		String identCode = getFirstValue(form, "identCode");
+		String account = getFirstValue(form, "account");
+
+		// 验证码判断
+		if(!IdentCodeSession.checkIdentCode(account, identCode)){
+			return errorRet("验证码错误");
+		}
+		if (!ValidateUtils.checkPs(password)) {
+			return errorRet("密码格式错误");
+		}
+
+		return new AppMemberBO().register(form.getValuesMap());
+	}
+
+	/**
+	 * 修改密码接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "old_password", "new_password" })
+	public Map<String, Object> changePs(Form form) throws IOException {
+		String oldPassword = getFirstValue(form, "old_password");
+		String newPassword = getFirstValue(form, "new_password");
+		// 密码格式判断
+		if (!ValidateUtils.checkPs(oldPassword))
+			return errorRet("旧密码格式不正确");
+		if (!ValidateUtils.checkPs(newPassword))
+			return errorRet("新密码格式不正确");
+		return new AppMemberBO().changePs(form.getValuesMap());
+	}
+
+	/**
+	 * 找回密码接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "account", "identCode", "new_password" })
+	public Map<String, Object> findPs(Form form) throws IOException {
+		String account = getFirstValue(form, "account");
+		String identCode = getFirstValue(form, "identCode");
+		String newPassword = getFirstValue(form, "new_password");
+		if (!ValidateUtils.isEmail(account) && !ValidateUtils.isMobile(account))
+			return errorRet("手机号/邮箱不存在");
+		if (!ValidateUtils.checkPs(newPassword))
+			return errorRet("新密码格式不正确");
+		if(!IdentCodeSession.checkIdentCode(account, identCode)){
+			return errorRet("验证码错误");
+		}
+		return new AppMemberBO().findPs(account, newPassword);
+	}
+
+	/**
+	 * 获取个人信息接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> info(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		return new AppMemberBO().info(uid);
+	}
+
+	/**
+	 * 修改个人信息接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> changeInfo(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String name = getFirstValue(form, "name");
+		String city = getFirstValue(form, "city");
+		String birthday = getFirstValue(form, "birthday");
+		String birthday_type = getFirstValue(form, "birthday_type");
+		return new AppMemberBO().changeInfo(uid, name, city, birthday,
+				birthday_type);
+	}
+
+	/**
+	 * 获得我的消息界面
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> getNews(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		return new AppMemberBO().getNews(uid);
+	}
+	
+	/**
+	 * 更换手机号/邮箱接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "type", "identCode", "account" })
+	public Map<String, Object> changeAccount(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		String identCode = getFirstValue(form, "identCode");
+		String account = getFirstValue(form, "account");
+		if (type.equals("1")) {
+			if (!ValidateUtils.isMobile(account))
+				return errorRet("手机格式不正确");
+		}
+		if (type.equals("2")) {
+			if (!ValidateUtils.isEmail(account))
+				return errorRet("邮箱格式不正确");
+		}
+		if(!IdentCodeSession.checkIdentCode(account, identCode)){
+			return errorRet("验证码错误");
+		}
+		return new AppMemberBO().changeAccount(uid, type, account);
+	}
+
+	/**
+	 * 修改设置属性接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "double_insurance" })
+	public Map<String, Object> changeSet(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String double_Insurance = getFirstValue(form, "double_insurance");
+		return new AppMemberBO().changeSet(uid, double_Insurance);
+	}
+
+	/**
+	 * 获得意见反馈的接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "content" })
+	public Map<String, Object> feedback(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String content = getFirstValue(form, "content");
+		String connections = getFirstValue(form, "connections");
+		return new AppMemberBO().feedback(uid, content, connections);
+	}
+
+	/**
+	 * 绑定邮箱或手机的接口
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "type", "identCode", "account", "imei", "clientId" })
+	public Map<String, Object> binding(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		String identCode = getFirstValue(form, "identCode");
+		String account = getFirstValue(form, "account");
+		String imei = getFirstValue(form, "imei");
+		String clientId = getFirstValue(form, "clientId");
+		if (type.equals("1")) {
+			if (!ValidateUtils.isMobile(account))
+				return errorRet("手机格式不正确");
+		}
+		if (type.equals("2")) {
+			if (!ValidateUtils.isEmail(account))
+				return errorRet("邮箱格式不正确");
+		}
+		if(!IdentCodeSession.checkIdentCode(account, identCode)){
+			return errorRet("验证码错误");
+		}
+		return new AppMemberBO().binding(uid, type, identCode, account, imei,
+				clientId);
+	}
+
+	/**
+	 * 删除某个提醒接口
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "type" })
+	public Map<String, Object> deleteRemind(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		String id = getFirstValue(form, "id");
+		String dId = getFirstValue(form, "dId");
+		return new AppRemindUpdateBO().deleRemind(uid, type, id, dId);
+	}
+
+	/**
+	 * 要求朋友添加生日
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> birthdayFriend(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		return new AppBO().birthdayFriend(uid);
+	}
+
+	/**
+	 * 生日详情中的同生缘
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> getStarBirthday(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String dateType = getFirstValue(form, "dateType");
+		String date = getFirstValue(form, "date");
+		return new AppBO().getStarBirthday(uid, dateType, date);
+	}
+
+	/**
+	 * 生日提醒从通讯录导入好友生日
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "mobiles" })
+	public Map<String, Object> birthdayAddressList(Form form)
+			throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String mobiles = getFirstValue(form, "mobiles");
+		return new AppBO().birthdayAddressList(uid, mobiles);
+	}
+
+	/**
+	 * 添加或者修改生日
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "icon", "name", "sex", "relation",
+			"dateType", "date", "time" })
+	public Map<String, Object> saveBirthday(Form form) throws IOException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("id", getFirstValue(form, "id"));
+		map.put("uid", getFirstValue(form, "uid"));
+		map.put("icon", getFirstValue(form, "icon"));
+		map.put("name", getFirstValue(form, "name"));
+		map.put("sex", getFirstValue(form, "sex"));
+		map.put("relation", getFirstValue(form, "relation"));
+		map.put("dateType", getFirstValue(form, "dateType"));
+		map.put("date", getFirstValue(form, "date"));
+		map.put("moveUpDay", getFirstValue(form, "moveUpDay"));
+		map.put("time", getFirstValue(form, "time"));
+		map.put("mobile", getFirstValue(form, "mobile"));
+		map.put("isTa", getFirstValue(form, "isTa"));
+		map.put("blessingTime", getFirstValue(form, "blessingTime"));
+		map.put("sign", getFirstValue(form, "sign"));
+		map.put("isSign", getFirstValue(form, "isSign"));
+		map.put("templetCode", getFirstValue(form, "templetCode"));
+		return new AppBO().saveBirthday(map);
+	}
+
+	/**
+	 * 添加或者修改生日
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "id"})
+	public Map<String, Object> getBirthdayTaInfo(Form form) throws IOException {
+		String id = getFirstValue(form, "id");
+		String uid = getFirstValue(form, "uid");
+		return new AppBO().getBirthdayTaInfo(uid, id);
+	}
+	
+
+
+	/**
+	 * 获得系统头像
+	 * @return
+	 * @throws IOException
+	 */
+	public Map<String, Object> getBirthdaySystemIcon(Form form) throws IOException {
+		return new AppBO().getBirthdaySystemIcon();
+	}
+	
+	/**
+	 * 获取短信模板(天气)
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args={"city","uid"})
+	 public Map<String,Object> weatherSmsMould(Form form) throws IOException{
+		String city=getFirstValue(form, "city");
+		 String uid=getFirstValue(form, "uid");
+		try {
+			return new AppWeatherBO().weatherSmsMould(city,uid);
+		} catch (Exception e) {
+			logger.info("获取该城市天气失败city:"+city,e);
+			return null;
+		}
+	 }
+
+	/**
+	 * 添加或者修改天气
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "city", "weatherType"})
+	public Map<String, Object> saveWeather(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String city = getFirstValue(form, "city");
+		String time = getFirstValue(form, "time");
+		String weatherType = getFirstValue(form, "weatherType");
+		String isNight = getFirstValue(form, "isNight");
+		String isTa = getFirstValue(form, "isTa");
+		String name = getFirstValue(form, "name");
+		String mobile = getFirstValue(form, "mobile");
+		String isSign = getFirstValue(form, "isSign");
+		String sign = getFirstValue(form, "sign");// 自定义署名，可以为空
+		String templetCode = getFirstValue(form, "templetCode");// 短信模板编号
+		String remindMe = getFirstValue(form, "remindMe");// 是否提醒我
+		String id = getFirstValue(form, "id");// 提醒的id 新增提醒为空 inster
+		return new AppWeatherBO().saveWeather(uid, city, weatherType,
+				isNight, name, mobile, isSign, sign, templetCode, remindMe,
+				id, time, isTa);
+
+	}
+
+	/**
+	 * 获取明星
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "type", "pn" })
+	public Map<String, Object> getCommonStar(Form form) throws IOException {
+		String uid = getUid(form);
+		String type = getFirstValue(form, "type");
+		String pn = getFirstValue(form, "pn");
+		String search = getFirstValue(form, "search");
+		return new AppRemindGetBO().getCommonStar(uid, type, pn, search);
+	}
+
+	/**
+	 * 获取类别 新片上映提醒、演唱会提醒、追剧提醒、综艺 这4个提醒点击添加，之后有3个选项 按影片/按影星/按类别
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "type" })
+	public Map<String, Object> getCommonType(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		return new AppRemindGetBO().getCommonType(uid, type);
+	}
+	
+	/**
+	 * 保存添加的类别
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid", "type", "id" })
+	public Map<String, Object> saveCommonType(Form form) {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		String id = getFirstValue(form, "id");
+		return new AppRemindUpdateBO().saveCommonType(uid, type, id);
+	}
+	
+	/**
+	 * 保存添加的明星
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid", "type", "id" })
+	public Map<String, Object> saveCommonStar(Form form) {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		String id = getFirstValue(form, "id");
+		return new AppRemindUpdateBO().saveCommonStar(uid, type, id);
+	}
+
+	/**
+	 * 提醒的添加修改提醒（可批量操作） 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "dId", "moveUpDay", "time", "type", "isTa" })
+	public Map<String, Object> saveCommonRemind(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		String dId = getFirstValue(form, "dId");
+		String isTa = getFirstValue(form, "isTa");
+		String taName = getFirstValue(form, "taName");
+		String mobile = getFirstValue(form, "mobile");
+		String time = getFirstValue(form, "time");
+		String moveUpDay = getFirstValue(form, "moveUpDay");
+		String moveUpTime = getFirstValue(form, "moveUpTime");
+		String sign = getFirstValue(form, "sign");
+		String remindMe = getFirstValue(form, "remindMe");
+		String city = getFirstValue(form, "city");
+		return new AppRemindUpdateBO().saveCommonRemind(uid, type, dId, isTa, taName, mobile, time, moveUpDay, moveUpTime, sign, remindMe, city);
+	}
+
+	/**
+	 * 提醒的修改
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "rId", "moveUpDay", "time" })
+	public Map<String, Object> updateCommonRemind(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String rId = getFirstValue(form, "rId");
+		String time = getFirstValue(form, "time");
+		String moveUpDay = getFirstValue(form, "moveUpDay");
+		String moveUpTime = getFirstValue(form, "moveUpTime");
+		return new AppRemindUpdateBO().updateCommonRemind(uid, rId, time, moveUpDay, moveUpTime);
+	}
+
+
+	/**
+	 * 通用 获取提醒的列表接口 （要将json获取的数据保存到本地） 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "type" })
+	public Map<String, Object> getCommonDataList(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String type = getFirstValue(form, "type");
+		String pn = getFirstValue(form, "pn");
+		String city = getFirstValue(form, "city");
+		String fType = getFirstValue(form, "fType");
+		
+		return new AppRemindGetBO().getCommonDataList(uid, type, pn, city, fType);
+	}
+	
+	/**
+	 * 获得生日的短信祝福模板
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "relation" })
+	public Map<String, Object> birthdaySmsMould(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String relation = getFirstValue(form, "relation");
+		
+		return new AppBO().birthdaySmsMould(uid, relation);
+	}
+
+	/**
+	 * 通用：获取提醒详情的数据接口 （不包括生日提醒在内的所有提醒详情）
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "type" })
+	public Map<String, Object> getCommonData(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String dId = getFirstValue(form, "dId");
+		String id = getFirstValue(form, "id");
+		String rId = getFirstValue(form, "rId");
+		String type = getFirstValue(form, "type");
+		String city = getFirstValue(form, "city");
+		String birthday_type = getFirstValue(form, "birthday_type");
+		String birthday = getFirstValue(form, "birthday");
+		return new AppRemindGetBO().getCommonData(uid, StringUtils.isNotBlank(dId) ? dId : id, rId, type, city, birthday_type, birthday);
+	}
+
+	/**
+	 * 招聘获得该职位数量
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "jobName", "city" })
+	public Map<String, Object> getJobInfo(Form form) throws IOException {
+		String city = getFirstValue(form, "city");
+		String jobName = getFirstValue(form, "jobName");
+		return new AppJobBO().getJobInfo(city, jobName);
+	}
+	
+	/**
+	 * 招聘获得关键词
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = {})
+	public Map<String, Object> getJobKeys(Form form) throws IOException {
+		return new AppJobBO().getJobKeys();
+	}
+	
+	/**
+	 * 招聘获得关键词
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = {})
+	public Map<String, Object> getJobKeys1(Form form) throws IOException {
+		return new AppJobBO().getJobKeys1();
+	}
+
+	/**
+	 * 点击提醒他时返回说明
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "city", "weatherType" })
+	public Map<String, Object> addWeatherMsg(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String city = getFirstValue(form, "city");
+		String weatherType = getFirstValue(form, "weatherType");
+		return new AppWeatherBO().addWeatherMsg(uid, city, weatherType);
+	}
+
+	/**
+	 * 添加修改工作提醒
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "city", "job", "education", "salary", "experience" })
+	public Map<String, Object> saveJob(Form form) throws IOException {
+		String id = getFirstValue(form, "id");
+		String uid = getFirstValue(form, "uid");
+		String city = getFirstValue(form, "city");
+		String job = getFirstValue(form, "job");
+		String salary = getFirstValue(form, "salary");
+		String education = getFirstValue(form, "education");
+		String experience = getFirstValue(form, "experience");
+		String isEmail = getFirstValue(form, "isEmail");
+		String remindType = getFirstValue(form, "remindType");
+		return new AppJobBO().saveJob(id, uid, city, job, salary, education,
+				experience, isEmail, remindType);
+	}
+
+	/**
+	 * 添加或者修改qq空间更新提醒
+	 * 
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid", "remindType", "qq"})
+	public Map<String, Object> saveQqQzone(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String id = getFirstValue(form, "id");
+		String remindType = getFirstValue(form, "remindType");
+		String qq = getFirstValue(form, "qq");
+		String isTa = getFirstValue(form, "isTa");
+		String taMobile = getFirstValue(form, "taMobile");
+		String remindMe = getFirstValue(form, "remindMe");
+		String taName = getFirstValue(form, "taName");
+		return new AppBO().saveQqQzone(id, uid, remindType, qq, isTa, taMobile,
+				remindMe, taName);
+	}
+
+	/**
+	 * 数据同步 APP->服务器
+	 * 
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid", "data" })
+	public Map<String, Object> uploadData(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String dataStr = getFirstValue(form, "data");
+		logger.info("json字符串："+dataStr);
+		JSONArray data = JSONArray.fromObject(dataStr);
+		// 将JSONArray转换成List
+		String[] args = new String[]{"id", "rType", "name", "icon", "repeat", "date", "dateType", "time", "moveUpDay", "moveUpTime", "relation", "dId", "status", "isDelete", "sex", "addedDate"};
+		List<Map<String, Object>> list = new ArrayList<Map<String,Object>>();
+		for (int i = 0; i < data.size(); i++) {
+			JSONObject jsonObject = data.getJSONObject(i);
+			Map<String, Object> map = new HashMap<String, Object>();
+			for(String arg : args){
+				Object val = null;
+				if(jsonObject.containsKey(arg)){
+					val = jsonObject.get(arg);
+					if(val != null){
+						val = val + "";
+					}
+				}
+				map.put(arg, val);
+			}
+			list.add(map);
+		}
+		if(list.isEmpty()){
+			throw new BusinessException("json数据为空，或者无法解析！");
+		}
+		return new AppSynchBO().uploadData(uid, list);
+	}
+
+	/**
+	 * 数据同步 服务器->APP
+	 * 
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid"})
+	public Map<String, Object> downloadData(Form form) throws IOException {
+		String uid = getFirstValue(form, "uid");
+		String ids = getFirstValue(form, "ids");
+		return new AppSynchBO().downloadData(uid, ids);
+	}
+	
+	/**
+	 * 消息推送回调
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "tId", "mobileType"})
+	public Map<String, Object> tuiOk(Form form) throws IOException {
+		String tId = getFirstValue(form, "tId");
+		String uid = getUid(form);
+		String mobileType = getFirstValue(form, "mobileType");	
+		return new AppBO().tuiOk(tId,uid,mobileType);
+	}
+
+	/**
+	 * 获得历史提醒Ta的数据
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid"})
+	public Map<String, Object> getTaRemind(Form form) throws IOException {
+		String uid = getUid(form);
+		return new AppSynchBO().getTaRemind(uid);
+	}
+
+	/**
+	 * 获得历史提醒Ta的数据
+	 * 
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid"})
+	public Map<String, Object> getTaHistory(Form form) throws IOException {
+		String uid = getUid(form);
+		return new AppRemindGetBO().getTaHistory(uid);
+	}
+
+	/**
+	 * 提醒Ta
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "time", "repeat", "date", "dateType", "taMobile", "content", "remindMe"})
+	public Map<String, Object> saveTaRemind(Form form) throws IOException {
+		String uid = getUid(form);
+		String time = getFirstValue(form, "time");
+		String repeat = getFirstValue(form, "repeat");
+		String date = getFirstValue(form, "date");
+		String dateType = getFirstValue(form, "dateType");
+		String taName = getFirstValue(form, "taName");
+		String taMobile = getFirstValue(form, "taMobile");
+		String content = getFirstValue(form, "content");
+		String sign = getFirstValue(form, "sign");
+		String remindMe = getFirstValue(form, "remindMe");
+		String id = getFirstValue(form, "id");
+		return new AppRemindUpdateBO().saveTaRemind(uid, id, time, repeat, date, dateType, taName, taMobile, content, sign, remindMe);
+	}
+	
+	/**
+	 * 批量添加测试的提醒数据
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "taMobile", "qq" })
+	public Map<String, Object> testAddRemins(Form form) throws IOException {
+		String uid = getUid(form);
+		String taMobile = getFirstValue(form, "taMobile");
+		String qq = getFirstValue(form, "qq");
+		return new AppTestBO().addRemind(uid, taMobile, qq);
+	}
+	
+	/**
+	 * 获取天气提醒的数据
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "id"})
+	public Map<String, Object> getRemindDet_1001(Form form) throws IOException {
+		String id = getFirstValue(form, "id");
+		return new AppWeatherBO().getRemindDet_1001(id);
+	}
+	
+	/**
+	 * 获取招聘提醒的数据
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "id"})
+	public Map<String, Object> getRemindDet_1006(Form form) throws IOException {
+		String id = getFirstValue(form, "id");
+		return new AppJobBO().getRemindDet_1006(id);
+	}
+	
+	/**
+	 * 处理uid和uId的遗留问题
+	 * @param form
+	 * @param arg
+	 * @return
+	 */
+	private String getUid(Form form){
+		String uid = getFirstValue(form, "uid");
+		if(StringUtils.isBlank(uid)){
+			uid = getFirstValue(form, "uId");
+		}
+		return uid;
+	}
+	
+	/**
+	 * 热门数据
+	 * @param form
+	 * @return
+	 * @throws IOException
+	 */
+	@NotNull(args = { "uid", "city" })
+	public Map<String, Object> getHotRemind(Form form) throws IOException {		
+		return new AppRemindGetBO().getHotData();
+	}
+
+}

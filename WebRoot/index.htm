@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<title>测试充值模块</title>
+<style type="text/css">
+<!--
+body,div,dl,dt,dd,ul,li,h1,h2,h3,h4,h5,h6,h7,h8,form,input,p,strong,em{ margin:0; padding:0; font-size:12px; color:#000; font:Arial, Helvetica, sans-serif;}
+ul,dl{ list-style:none}
+img{ vertical-align:top;border:0;}
+h1,h2,,h3,h4,h5,h6,p{border:0;}
+#content{ width:798px; margin:0 auto;}
+#content h2{ line-height:50px; font-size:14px; color:#333;}
+.main{ float:left;width:798px; border:1px solid #d8d9db;}
+.title{ width:788px; height:42px; border-bottom:1px solid #d8d9db; background:#f1f3f2; padding-left:10px;float:left;}
+.title img{ margin-top:8px; float:left;}
+.title p{ float:left; color:#000; line-height:42px; padding-left:10px;}
+.title span,.main_c div span{ color:#868686;}
+.main_c{ float:left; width:798px; padding-left:25px; padding-top:15px; padding-bottom:10px;}
+.main_c div{ padding-left:8px; padding-right:8px; float:left; margin-bottom:15px;}
+.main_c div input{ float:left; margin-right:5px; margin-top:3px;}
+.main_c div img{ float:left;}
+.main_c div p{ float:left; width:500px; line-height:25px; text-decoration:none;}
+.main_c div p a{ text-decoration:none; color:#000;}
+-->
+</style>
+<link type="text/css" href="/css/win.css" rel="stylesheet" />
+</head>
+<body>
+<script type="text/javascript" src="/js/pageset.js"></script>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript">
+	// 订单号付款还要提供订单号进来
+	function recharge(email,pkMember){
+		MyouWin.addButton('取消充值', false).createWin({
+			msg : '<iframe src="/floristpay/florist/memberRecharge.html?pkMember=0001AAFDS13GTEQEPQKZ" style="width:96%; height:89%;" />',
+			width: 900,
+			height: 485,
+			title: '会员充值',
+			c_animate: false
+		});
+		
+	}
+	
+</script>
+
+<h3>花店提现（花店进行）</h3>
+<form action="/floristpay/florist/draw.html" method="post">
+	花   店: <input type="text" name="pkOrg" value="00000000000000000002" /><br />
+	money: <input type="text" name="money" /><br />
+	密   码: <input type="password" name="password" /><br />
+	账   户: <input type="text" name="pkBankAccount"  value = "0001AAFDS13GTEQEPB5G"/>
+	<input type="submit" value="提现" ><br />
+</form>
+<br />
+<br />
+<h3>花店提现处理（花族网进行）</h3>
+<form action="/floristpay/florist/drawPro.html" method="post">
+	单据号: <input type="text" name="serialNumber" value="" /><br />
+	手续费: <input type="text" name="fee" /><br />
+	密密码: <input type="password" name="password" /><br />
+	元原因: <input type="text" name="memo" /><br />
+	处  理   : <input name="isSuc" type="radio" value="1"  id="1020" />通过 <input name="isSuc" type="radio" value="0"  id="1020" />不通过
+	
+	<input type="submit" value="处理" ><br />
+</form>
+
+
+<br />
+<br />
+
+
+<h3>花店消费</h3>
+
+<form action="/floristpay/florist/buyhotorg.html" method="post">
+	花   店: <input type="text" name="pkOrg" value="00000000000000000002" /><br />
+	typ e: <input name="type" type="radio" value="1"  id="1020" />余额 <input name="type" type="radio" value="0"  id="1020" />积分<br />
+	年   数: <input type="text" name="year" value="1" /><br />
+	密   码: <input type="password" name="password" /><br />
+	<input type="submit" value="消费" ><br />
+</form>
+
+
+<br />
+<br />
+
+<h3>个人线上充值</h3>
+<a href = '#' onclick= "recharge('896694944@qq.com','00000000000000000001')">个人线上充值</a>
+
+
+<h3>个人线下充值（花店进行,是所在花店的会员才允许充值）</h3>
+<form action="/floristpay/florist/offLineRecharge.html" method="post">
+	email: <input type="text" name="pkMember" value="0001AAFDS13GTEQEPQKZ" /><br />
+	花   店: <input type="text" name="pkOrg" value="00000000000000000002" /><br />
+	money: <input type="text" name="money" /><br />
+	密   码: <input type="password" name="password" /><br />
+	账   户: <input type="text" name="pkBankAccount"  value = "0001AAFDS13GTEQEPB5G"/><br />
+	<input type="submit" value="充值" ><br />
+</form>
+
+
+<div>
+<h3>花店线下充值（花族网管理员进行）</h3>
+<form action="/floristpay/florist/offLineRecharge.html" method="post">
+花   店: <input type="text" name="pkOrg" value="00000000000000000002" /><br />
+money: <input type="text" name="money" /><br />
+密   码: <input type="password" name="password" /><br />
+账   户: <input type="text" name="pkBankAccount"  value = "0001AAFDS13GTEQEPB5G"/><br />
+<input type="submit" value="充值" ><br />
+</form>
+</div>
+<h3>订单余额支付（会员进行）</h3>
+<form id="form1" name="form1" method="post" target="_blank" action="/floristpay/florist/orderPay.html" >
+	订单号:<input type="text" name="pkOrder" id = "pkOrder" value = "00000000000000000001"/><br />
+	<input type="submit" id = "Submit" value="支付" />
+</form>
+<h3>花店线上充值（花店进行）</h3>
+<form id="form1" name="form1" method="post" target="_blank" action="/floristpay/onlinepay/gopay.html" >
+	<div id="content">
+	输入充值花店
+	<input type="text" name="pkOrg" value="00000000000000000002" /><br />
+	
+	输入充值金额
+	<input type="text" name="money" id = "money" /><br />
+    <h2>选择支付方式</h2>
+    <div class=" main">
+    <div class="title">
+      <img src="/images/bank/logo.gif" width="69" height="22" />
+      <p>为您提供以下网上支付服务<span>（财付通是腾讯旗下第三方支付平台）</span></p>
+      </div>
+      <div class="main_c">
+	       <div><a href="#"><input name="bank" type="radio" value="1001" id="1001" /><img src="/images/bank/29.gif" width="121" height="21" onclick="blurImg('1001')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1038" id="1038" /> <img src="/images/bank/28.gif" width="121" height="21" onclick="blurImg('1038')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1003" id="1003"  /> <img src="/images/bank/2.gif" width="121" height="21" onclick="blurImg('1003')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1004"  id="1004" /><img src="/images/bank/9.gif" width="121" height="21" onclick="blurImg('1004')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1005" id="1005"  /><img src="/images/bank/1.gif" width="121" height="21" onclick="blurImg('1005')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1006"  id="1006" /><img src="/images/bank/4.gif" width="121" height="21" onclick="blurImg('1006')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1008"  id="1008" /><img src="/images/bank/8.gif" width="121" height="21" onclick="blurImg('1008')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1009"  id="1009" /> <img src="/images/bank/27.gif" width="121" height="21" onclick="blurImg('1009')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1010"  id="1010" /><img src="/images/bank/18.gif" width="121" height="21" onclick="blurImg('1010')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1020"  id="1020" /><img src="/images/bank/5.gif" width="121" height="21" onclick="blurImg('1020')" /></a></div>
+	       <div><a  href="#"><input name="bank" type="radio" value="1021"  id="1021" /><img src="/images/bank/7.gif" width="121" height="21" onclick="blurImg('1021')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1022"  id="1022" /> <img src="/images/bank/3.gif" width="121" height="21" onclick="blurImg('1022')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1024" id="1024"  /><img src="/images/bank/20.gif" width="121" height="21" onclick="blurImg('1024')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1025"  id="1025" /><img src="/images/bank/22.gif" width="121" height="21" onclick="blurImg('1025')"/></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1027"  id="1027" /><img src="/images/bank/6.gif" width="121" height="21" onclick="blurImg('1027')" /></a></div>
+        <div><a href="#"><input name="bank" type="radio" value="1002"  id="1002" /><img src="/images/bank/10.gif" width="121" height="21" onclick="blurImg('1002')" /> </a></div>
+        <div><a href="#"><input name="bank" type="radio" value="1032" id="1032"  /><img src="/images/bank/11.gif" width="121" height="21" onclick="blurImg('1032')" /></a></div>
+        <div><a href="#"><input name="bank" type="radio" value="1033" id="1033"  /><img src="/images/bank/14.gif" width="121" height="21" onclick="blurImg('1033')" /></a></div>
+           <div><a href="#"><input name="bank" type="radio" value="1052" id="1052"  /><img src="/images/bank/19.gif" width="121" height="21" onclick="blurImg('1052')" /></a></div>
+	      	<div><a href="#"><input name="bank" type="radio" value="0" checked="checked" id="0" /><p onclick="blurImg('0')">财付通账户支付<span>（财付通账户余额支付，一点通支付）</span></p></a></div>
+      </div>
+    </div>
+   </div>
+   <input type="submit" id = "Submit" value="充值" />
+   </form>
+
+<div></div>
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<h3>订单付款（会员进行）</h3>
+<form id="form1" name="form1" method="post" target="_blank" action="/floristpay/onlinepay/orderNoPay.html" >
+	<div id="content">
+	输入订单号
+	<input type="text" name="orderId" id = "orderId" value = "1"/><br />
+    <h2>选择支付方式</h2>
+    <div class=" main">
+    <div class="title">
+      <img src="/images/bank/logo.gif" width="69" height="22" />
+      <p>为您提供以下网上支付服务<span>（财付通是腾讯旗下第三方支付平台）</span></p>
+      </div>
+      <div class="main_c">
+	       <div><a href="#"><input name="bank" type="radio" value="1001" id="1001" /><img src="/images/bank/29.gif" width="121" height="21" onclick="blurImg('1001')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1038" id="1038" /> <img src="/images/bank/28.gif" width="121" height="21" onclick="blurImg('1038')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1003" id="1003"  /> <img src="/images/bank/2.gif" width="121" height="21" onclick="blurImg('1003')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1004"  id="1004" /><img src="/images/bank/9.gif" width="121" height="21" onclick="blurImg('1004')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1005" id="1005"  /><img src="/images/bank/1.gif" width="121" height="21" onclick="blurImg('1005')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1006"  id="1006" /><img src="/images/bank/4.gif" width="121" height="21" onclick="blurImg('1006')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1008"  id="1008" /><img src="/images/bank/8.gif" width="121" height="21" onclick="blurImg('1008')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1009"  id="1009" /> <img src="/images/bank/27.gif" width="121" height="21" onclick="blurImg('1009')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1010"  id="1010" /><img src="/images/bank/18.gif" width="121" height="21" onclick="blurImg('1010')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1020"  id="1020" /><img src="/images/bank/5.gif" width="121" height="21" onclick="blurImg('1020')" /></a></div>
+	       <div><a  href="#"><input name="bank" type="radio" value="1021"  id="1021" /><img src="/images/bank/7.gif" width="121" height="21" onclick="blurImg('1021')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1022"  id="1022" /> <img src="/images/bank/3.gif" width="121" height="21" onclick="blurImg('1022')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1024" id="1024"  /><img src="/images/bank/20.gif" width="121" height="21" onclick="blurImg('1024')" /></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1025"  id="1025" /><img src="/images/bank/22.gif" width="121" height="21" onclick="blurImg('1025')"/></a></div>
+	       <div><a href="#"><input name="bank" type="radio" value="1027"  id="1027" /><img src="/images/bank/6.gif" width="121" height="21" onclick="blurImg('1027')" /></a></div>
+        <div><a href="#"><input name="bank" type="radio" value="1002"  id="1002" /><img src="/images/bank/10.gif" width="121" height="21" onclick="blurImg('1002')" /> </a></div>
+        <div><a href="#"><input name="bank" type="radio" value="1032" id="1032"  /><img src="/images/bank/11.gif" width="121" height="21" onclick="blurImg('1032')" /></a></div>
+        <div><a href="#"><input name="bank" type="radio" value="1033" id="1033"  /><img src="/images/bank/14.gif" width="121" height="21" onclick="blurImg('1033')" /></a></div>
+           <div><a href="#"><input name="bank" type="radio" value="1052" id="1052"  /><img src="/images/bank/19.gif" width="121" height="21" onclick="blurImg('1052')" /></a></div>
+	      	<div><a href="#"><input name="bank" type="radio" value="0" checked="checked" id="0" /><p onclick="blurImg('0')">财付通账户支付<span>（财付通账户余额支付，一点通支付）</span></p></a></div>
+      </div>
+    </div>
+   </div>
+   <input type="submit" id = "Submit" value="充值" />
+   </form>
+   
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   <br/>
+   
+   
+   <form action="https://122.233.224.228/public/onlinepay/alipay/post/return_url.html" method="post">
+   <input  type="submit" value="453"/></form>
+   
+ </body>
+</html>

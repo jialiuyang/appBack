@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-2.5.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd"
+        >
+
+    <description>Spring公共配置文件</description>
+
+    <!-- 使用annotation 自动注册bean,并检查@Required,@Autowired的属性已被注入 -->
+    <context:component-scan base-package="com.myou.appback"/>
+    
+ 	<bean class="com.myou.appback.modules.util.SpringContext" id="springContext" />
+
+    <!-- 定义受环境影响易变的变量 -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="locations">
+            <list>
+                <!-- 标准配置 -->
+                <value>classpath*:/application.properties</value>
+                <!-- 本地开发环境配置
+                <value>classpath*:/application.local.properties</value> -->
+            </list>
+        </property>
+    </bean>
+
+    <context:annotation-config/>
+
+    <!-- 数据源配置,主要用于开发测试环境 -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="url" value = "${jdbc.url}" />
+		<property name="driverClassName" value = "${jdbc.driver}" />
+		<property name="username" value = "${jdbc.username}" />
+		<property name="password" value = "${jdbc.password}" />
+		<!-- (boolean) 指明连接是否被空闲连接回收器( 如果有) 进行检验. 如果检测失败, 则连接将被从池中去除.注意: 设置为true 后如果要生效,validationQuery 参数必须设置为非空字符串 要启用空闲连接回收器线程，必须启用  -->
+		<property name="testWhileIdle" value = "true" />
+		<!-- (boolean) 指明是否在从池中取出连接前进行检验, 如果检验失败, 则从池中去除连接并尝试取出另一个.注意: 设置为true 后如果要生效,validationQuery 参数必须设置为非空字符串 参考validationInterval以获得更有效的验证  -->
+		<property name="testOnBorrow" value = "true" />
+		<!-- (String) SQL 查询, 用来验证从连接池取出的连接, 在将连接返回给调用者之前. 如果指定, 则查询必须是一个SQL SELECT 并且必须返回至少一行记录 查询不必返回记录，但这样将不能抛出SQL异常  --> 
+		<property name="validationQuery" value = "SELECT 1" />
+		<!-- (boolean) 指明是否在归还到池中前进行检验 注意: 设置为true 后如果要生效,validationQuery 参数必须设置为非空字符串  --> 
+		<property name="testOnReturn" value = "false" />
+		<!-- (int) 在空闲连接回收器线程运行期间休眠的时间值, 以毫秒为单位. 如果设置为非正数, 则不运行空闲连接回收器线程 这个值不应该小于1秒，它决定线程池多久验证连接空闲或丢弃连接。  --> 
+		<property name="timeBetweenEvictionRunsMillis" value = "3600000" />
+		<!-- (int) 最大活动连接: 连接池在同一时间能够分配的最大活动连接的数量, 如果设置为非正数则表示不限制 -->
+		<property name="maxActive" value = "${jdbc.maxPoolSize}" />
+		<!-- (int) 最大空闲连接: 连接池中容许保持空闲状态的最大连接数量, 超过的空闲连接将被释放, 如果设置为负数表示不限制 如果启用，将定期检查限制连接，如果空闲时间超过minEvictableIdleTimeMillis 则释放连接 （ 参考testWhileIdle ）  -->
+		<property name="maxIdle" value = "${jdbc.maxPoolSize}" />
+		<!-- (int) 初始化连接: 连接池启动时创建的初始化连接数量 -->
+		<property name="initialSize" value = "${jdbc.initialPoolSize}" />
+		<!-- (int) 最大等待时间: 当没有可用连接时, 连接池等待连接被归还的最大时间( 以毫秒计数), 超过时间则抛出异常, 如果设置为-1 表示无限等待 -->
+		<property name="maxWait" value = "30000" />
+		<!-- (int) 泄露的连接可以被删除的超时值, 单位秒  --> 
+		<property name="removeAbandonedTimeout" value = "180" />
+		<!-- 连接在池中保持空闲而不被空闲连接回收器线程( 如果有) 回收的最小时间值，单位毫秒 -->
+		<property name="minEvictableIdleTimeMillis" value = "18000000" /> 
+		<!-- (int) 最小空闲连接: 连接池中容许保持空闲状态的最小连接数量, 低于这个数量将创建新的连接, 如果设置为0 则不创建如果连接验证失败将缩小这个值（ 参考testWhileIdle ）  -->
+		<property name="minIdle" value = "${jdbc.minPoolSize}" /> 
+		<!-- (boolean) 标记当Statement 或连接被泄露时是否打印程序的stack traces 日志。被泄露的Statements 和连接的日志添加在每个连接打开或者生成新的Statement, 因为需要生成stack trace -->
+		<property name="logAbandoned" value = "true" /> 
+		<!-- removeAbandonedTimout 的限制. 如果设置为true, 连接被认为是被泄露并且可以被删除, 如果空闲时间超过removeAbandonedTimeout. 设置为true 可以为写法糟糕的没有关闭连接的程序修复数据库连接.参考logAbandoned  -->
+		<property name="removeAbandoned" value = "true" /> 
+    </bean>
+    
+    
+     <!-- Hibernate配置 -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+                <prop key="jdbc.fetch_size">${hibernate.jdbc.fetch_size}</prop>
+                <prop key="jdbc.batch_size">${hibernate.jdbc.batch_size}</prop>
+                <prop key="hibernate.connection.release_mode">after_transaction</prop>
+                <prop key="exposeManagedResourceClassLoader">true</prop>
+                <!-- <prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>  -->
+                <!-- 开始配置hibernate的缓存，包括二级缓存，此处为默认的开启  暂时关闭二级缓存
+                <prop key="hibernate.cache.use_query_cache">${hibernate.cache.use_query_cache}</prop>
+                <prop key="hibernate.cache.use_second_level_cache">${hibernate.cache.use_second_level_cache}</prop>
+                <prop key="hibernate.cache.name">${hibernate.cache.name}</prop>
+                <prop key="hibernate.cache.provider_class">${hibernate.cache.provider}</prop>
+                <prop key="hibernate.query.substitutions">true 1,false 0</prop>
+                <prop key="hibernate.search.default.directory_provider">${hibernate.search.default.directory_provider}</prop>
+                <prop key="hibernate.search.default.indexBase">${hibernate.search.default.indexBase}</prop> -->
+            </props>
+        </property>
+        <!-- 通过注解的方式定义hbm 
+        <property name="packagesToScan">
+            <list>
+                <value>com.aihuazu.entity</value>
+            </list>
+        </property>
+        -->
+        <property name="mappingResources" >
+            <list>
+            	
+            </list>
+        </property>
+    </bean>
+
+	<!-- Hibernate配置 -->
+    <bean id="sessionFactoryQuery" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+                <prop key="jdbc.fetch_size">${hibernate.jdbc.fetch_size}</prop>
+                <prop key="jdbc.batch_size">${hibernate.jdbc.batch_size}</prop>
+                <prop key="hibernate.connection.release_mode">after_transaction</prop>
+                <prop key="exposeManagedResourceClassLoader">true</prop>
+                <!-- <prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>  -->
+                <!-- 开始配置hibernate的缓存，包括二级缓存，此处为默认的开启  暂时关闭二级缓存
+                <prop key="hibernate.cache.use_query_cache">${hibernate.cache.use_query_cache}</prop>
+                <prop key="hibernate.cache.use_second_level_cache">${hibernate.cache.use_second_level_cache}</prop>
+                <prop key="hibernate.cache.name">${hibernate.cache.name}</prop>
+                <prop key="hibernate.cache.provider_class">${hibernate.cache.provider}</prop>
+                <prop key="hibernate.query.substitutions">true 1,false 0</prop>
+                <prop key="hibernate.search.default.directory_provider">${hibernate.search.default.directory_provider}</prop>
+                <prop key="hibernate.search.default.indexBase">${hibernate.search.default.indexBase}</prop> -->
+            </props>
+        </property>
+        <property name="mappingResources" >
+            <list>
+            
+            </list>
+        </property>
+    </bean>
+    
+    <!-- 事务配置 -->
+    <bean id ="transactionManager" class = "org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name = "dataSource"  ref = "dataSource" />
+	</bean>
+
+	<bean id="transactionManagerQuery" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+	        <property name="sessionFactory" ref="sessionFactory"/>
+	</bean>
+
+    <!-- 使用annotation定义事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+</beans>

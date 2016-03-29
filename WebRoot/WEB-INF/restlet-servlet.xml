@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+<!-- <bean name="application" class="org.lifeba.ws.ComponentApplication"/>   -->
+ 
+    
+<bean name="root" class="org.restlet.ext.spring.SpringRouter">
+		
+		<property name="attachments">
+			<map>
+			<entry key="/{version}/{type}">
+				   <bean class="org.restlet.ext.spring.SpringFinder">  
+                       <lookup-method name="create" bean="YunResource" />  
+                   </bean> 
+                </entry>
+			
+				<entry key="/app/{type}">
+				   <bean class="org.restlet.ext.spring.SpringFinder">  
+                       <lookup-method name="create" bean="PicShareResource" />  
+                   </bean> 
+                </entry>
+				<entry key="/market/{type}">
+				   <bean class="org.restlet.ext.spring.SpringFinder">  
+                       <lookup-method name="create" bean="MarketResource" />  
+                   </bean> 
+                </entry>
+			</map>
+		</property>
+</bean>
+<bean id="YunResource" class="com.myou.appback.resource.YunResource" scope="prototype"/>
+<bean id="PicShareResource" class="com.myou.appback.resource.PicShareResource" scope="prototype"/>
+<bean id="MarketResource" class="com.myou.appback.resource.MarketResource" scope="prototype"/>
+</beans>

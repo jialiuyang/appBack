@@ -1,0 +1,57 @@
+package com.yun.appback.method;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.restlet.data.Form;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.yun.appback.bo.App15BO;
+import com.yun.appback.modules.annotation.NotNull;
+import com.yun.appback.modules.annotation.Version;
+
+/**
+ * @description：json1.5版本的具体的方法
+ * @author： jiujiya
+ * @update： 2014-12
+ * @version： 1.0
+ */
+@Version(name="app1.5", code = 15)
+public class Yun15Method extends BaseMethod {
+
+	/** 日志对象 */
+	protected Logger logger = LoggerFactory.getLogger(Yun15Method.class);
+
+	/**
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> test(Form form) {
+		logger.info("进入app1.5的方法");
+		return new HashMap<String, Object>();
+	}
+	
+	/**
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> isNeedDown(Form form) {
+		logger.info("进入app1.5的方法");
+		String uid = getFirstValue(form, "uid");
+		return new  App15BO().isNeedDown(uid);
+	}
+	/**
+	 * @param form
+	 * @return
+	 */
+	@NotNull(args = { "uid" })
+	public Map<String, Object> deleteOneUser(Form form) {
+		String uid = getFirstValue(form, "uid");
+		return new  App15BO().deleteOneUser(uid);
+	}
+	 
+
+}
